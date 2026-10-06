@@ -195,6 +195,17 @@ public interface StorageManager {
     Map<UUID, String> selectPlayers(List<String> uuids);
 
     /**
+     * Retrieves all items purchased by the given buyer that are still awaiting collection
+     * ({@code PURCHASED} storage type), loaded directly from the database.
+     * Used to synchronize the in-memory cache when a player joins, since purchases made
+     * on another server only update that server's memory.
+     *
+     * @param buyerUniqueId buyer's UUID
+     * @return future containing the purchased items belonging to the buyer
+     */
+    CompletableFuture<List<Item>> selectPurchasedItems(UUID buyerUniqueId);
+
+    /**
      * Marks unread purchase logs as read for a specific item and seller.
      * Used by the cluster addon when the seller receives a real-time notification
      * on another server, to prevent a duplicate "while you were away" notification.

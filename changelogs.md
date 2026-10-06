@@ -1,3 +1,8 @@
+# 4.0.0.9
+
+- **Fixed** Purchased items not appearing on other servers in multi-server (Redis) setups - buying an item on one server added it to that server's in-memory `PURCHASED` storage, but the Redis `ItemBoughtListener` on other servers only removed the item from their `LISTED` cache without ever adding it to their `PURCHASED` cache. Switching servers made the purchase invisible until a restart. The plugin now reconciles a player's `PURCHASED` items with the database when they join: items purchased on another server are added, and items claimed on another server are removed
+- **Added** `AuctionManager.syncPurchasedItems(Player)` and `StorageManager.selectPurchasedItems(UUID)` - reconciles the in-memory `PURCHASED` cache with the database for a specific buyer, usable by addons after cross-server purchase notifications
+
 # 4.0.0.8
 
 - **Fixed** Critical item duplication in multi-server (Redis) setups - when a player removed a selling item via the selling inventory, the item was correctly given to the player and marked as `DELETED` in the database, but other servers received a generic `LISTED` removal message and incorrectly recreated the item in their `EXPIRED` cache, allowing it to be claimed a second time on another server

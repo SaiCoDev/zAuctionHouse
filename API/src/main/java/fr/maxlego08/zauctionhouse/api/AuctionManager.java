@@ -235,6 +235,17 @@ public interface AuctionManager {
     List<Item> getPurchasedItems(java.util.UUID uniqueId);
 
     /**
+     * Synchronizes the in-memory {@code PURCHASED} storage with the database for the given
+     * player. Purchases made on another server only update that server's memory, so this
+     * method reconciles the local cache: items purchased elsewhere are added, and items
+     * claimed elsewhere are removed. Runs asynchronously.
+     *
+     * @param player player whose purchased items should be synchronized
+     * @return future completing once the cache has been reconciled
+     */
+    CompletableFuture<Void> syncPurchasedItems(Player player);
+
+    /**
      * Retrieves or initializes the cache entry associated with the given player, exposing
      * frequently accessed player-specific data.
      *

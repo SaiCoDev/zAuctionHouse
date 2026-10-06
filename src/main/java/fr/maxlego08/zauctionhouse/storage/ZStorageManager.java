@@ -243,6 +243,23 @@ public class ZStorageManager extends ItemLoaderUtils implements StorageManager {
     }
 
     @Override
+    public CompletableFuture<List<Item>> selectPurchasedItems(UUID buyerUniqueId) {
+        return CompletableFuture.supplyAsync(() -> {
+
+            var items = with(ItemRepository.class).selectByBuyer(buyerUniqueId);
+            if (items.isEmpty()) return new ArrayList<Item>();
+
+            var uuids = items.stream().flatMap(e -> java.util.stream.Stream.of(e.seller_unique_id(), e.buyer_unique_id())).filter(Objects::nonNull).map(UUID::toString).distinct().toList();
+            var playerNames = selectPlayers(uuids);
+
+            var loadItems = new ArrayList<Item>();
+            var performanceDebug = new PerformanceDebug(plugin);
+            createItems(plugin, playerNames, items, performanceDebug, (a, item) -> loadItems.add(item));
+            return loadItems;
+        }, this.plugin.getExecutorService());
+    }
+
+    @Override
     public Map<UUID, String> selectPlayers(List<String> uuids) {
         return with(PlayerRepository.class).select(uuids).stream().collect(Collectors.toMap(PlayerDTO::unique_id, PlayerDTO::name));
     }

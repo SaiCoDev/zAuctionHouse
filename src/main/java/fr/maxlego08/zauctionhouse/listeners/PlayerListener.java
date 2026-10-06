@@ -29,6 +29,10 @@ public class PlayerListener implements Listener {
         // Load player options
         this.plugin.getAuctionManager().getOptionService().loadPlayerOptions(player.getUniqueId());
 
+        // Sync purchased items from the database - purchases made on another server (Redis cluster)
+        // only update that server's memory, so reconcile this server's PURCHASED cache on join
+        this.plugin.getAuctionManager().syncPurchasedItems(player);
+
         if (player.getName().equals("Maxlego08")) {
             this.plugin.getScheduler().runLater(task -> {
                 if (player.isOnline()) {

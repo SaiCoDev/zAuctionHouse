@@ -329,6 +329,43 @@ public class ZAuctionManager extends ZUtils implements AuctionManager {
     }
 
     @Override
+    public CompletableFuture<Void> syncPurchasedItems(Player player) {
+        var uniqueId = player.getUniqueId();
+        return this.plugin.getStorageManager().selectPurchasedItems(uniqueId).thenAccept(databaseItems -> {
+
+            var storage = this.storageItemsById.get(StorageType.PURCHASED);
+
+            var databaseIds = new HashSet<Integer>(databaseItems.size());
+            for (Item item : databaseItems) {
+                databaseIds.add(item.getId());
+            }
+
+            // Remove items that are no longer PURCHASED in the database (e.g. claimed on another server)
+            for (Item item : new ArrayList<>(storage.values())) {
+                if (uniqueId.equals(item.getBuyerUniqueId()) && !databaseIds.contains(item.getId())) {
+                    removeItem(StorageType.PURCHASED, item.getId());
+                }
+            }
+
+            // Add items purchased on another server that this server's memory never received
+            for (Item item : databaseItems) {
+                if (!storage.containsKey(item.getId())) {
+                    addItem(StorageType.PURCHASED, item);
+                }
+            }
+
+            // Only touch the player cache while the player is online, otherwise getCache would
+            // re-insert an entry for a player that removeCache already cleaned up on quit
+            if (player.isOnline()) {
+                clearPlayerCache(player, PlayerCacheKey.ITEMS_PURCHASED);
+            }
+        }).exceptionally(throwable -> {
+            this.plugin.getLogger().severe("Failed to sync purchased items for " + player.getName() + ": " + throwable.getMessage());
+            return null;
+        });
+    }
+
+    @Override
     public List<Item> resolveItems(StorageType storageType, IntList ids) {
         long startTime = performanceDebug.start();
 

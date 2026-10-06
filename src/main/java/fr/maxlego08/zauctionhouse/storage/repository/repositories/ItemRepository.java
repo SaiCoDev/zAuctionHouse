@@ -86,4 +86,19 @@ public class ItemRepository extends Repository {
     public List<ItemDTO> select(List<String> ids) {
         return select(ItemDTO.class, schema -> schema.whereIn("id", ids));
     }
+
+    /**
+     * Selects all items purchased by the given buyer that are still awaiting collection.
+     * Used to synchronize the in-memory PURCHASED cache with the database when a player
+     * joins, since purchases made on another server only update that server's memory.
+     *
+     * @param buyerUniqueId buyer's UUID
+     * @return purchased items belonging to the buyer
+     */
+    public List<ItemDTO> selectByBuyer(UUID buyerUniqueId) {
+        return select(ItemDTO.class, schema -> {
+            schema.where("buyer_unique_id", buyerUniqueId.toString());
+            schema.where("storage_type", StorageType.PURCHASED.name());
+        });
+    }
 }
